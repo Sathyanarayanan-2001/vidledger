@@ -1,0 +1,76 @@
+# Test on every push and pull request; deploy the dashboard to GitHub Pages from main.
+# Default permissions are read-only; only the deploy job may write to Pages.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    # The private data repository only runs the agent; it does not need CI minutes.
+    if: vars.VIDLEDGER_ROLE != 'data'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install pinned test tools
+        run: |
+          python -m pip install --require-hashes -r requirements-dev.txt
+          npm ci
+      - name: Python unit tests
+        run: python -m pytest tests/python
+      - name: JavaScript unit tests
+        run: npm test
+      - name: Browser tests
+        run: |
+          python -m playwright install --with-deps chromium
+          python -m pytest tests/e2e
+
+  deploy:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.VIDLEDGER_ROLE != 'data'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Assemble the site (app files only, no docs or tests)
+        run: |
+          mkdir _site
+          cp -r docs/index.html docs/app.js docs/styles.css docs/theme-init.js docs/sw.js \
+                docs/manifest.webmanifest docs/js docs/fonts docs/icons docs/demo _site/
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

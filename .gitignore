@@ -1,0 +1,27 @@
+# ---- Personal data must never be committed to main ----
+# Your library lives only on the vidledger-state branch, your records on
+# vidledger-user, both in the PRIVATE data repository.
+state/
+user/
+.env
+.env.*
+*.secret.json
+# Exports and backups downloaded from the dashboard
+vidledger-library-*.csv
+vidledger-anki-*.csv
+vidledger-backup-*.json
+exports/
+backups/
+
+# ---- Tools ----
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+node_modules/
+test-results/
+playwright-report/
+_site/
+.DS_Store
+Thumbs.db

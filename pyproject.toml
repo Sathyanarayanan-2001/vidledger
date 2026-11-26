@@ -1,0 +1,12 @@
+[project]
+name = "vidledger"
+version = "1.0.0"
+description = "Learn from saved YouTube videos: a Gemini agent on GitHub Actions and a GitHub Pages dashboard"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+# The agent uses only the Python standard library: no runtime dependencies.
+dependencies = []
+
+[tool.pytest.ini_options]
+testpaths = ["tests/python"]
+addopts = "-q"

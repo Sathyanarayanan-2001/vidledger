@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en-IN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <!-- Only this site's own files may load. Network peers: api.github.com (your data), YouTube thumbnails and the no-cookie player. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://i.ytimg.com; font-src 'self'; connect-src 'self' https://api.github.com; frame-src https://www.youtube-nocookie.com; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
+  <meta name="description" content="VidLedger: learn from your saved YouTube videos. Gemini triages and transcribes them; you decide, review and revise.">
+  <title>VidLedger</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="preload" href="fonts/ibm-plex-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="modulepreload" href="js/dom.js">
+  <link rel="modulepreload" href="js/format.js">
+  <link rel="modulepreload" href="js/core.js">
+  <link rel="modulepreload" href="js/model.js">
+  <link rel="modulepreload" href="js/store.js">
+  <link rel="modulepreload" href="js/github.js">
+  <link rel="modulepreload" href="js/ui.js">
+  <script src="theme-init.js"></script>
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="topbar">
+    <a class="brand" href="#/home" aria-label="VidLedger home">
+      <img src="icons/favicon.svg" width="28" height="28" alt="">
+      <span>VidLedger</span>
+    </a>
+    <span id="mode-chip" class="chip-mode" hidden>Demo</span>
+    <span class="spacer"></span>
+    <span id="sync-pill" class="pill" role="status" aria-live="polite">Saved on this device</span>
+    <button id="process-btn" type="button" class="btn queue-btn">Process now</button>
+    <button id="theme-btn" type="button" class="icon-btn" aria-label="Switch theme"></button>
+  </header>
+  <div class="shell">
+    <nav class="sidenav" aria-label="Main">
+      <ul id="sidenav-list"></ul>
+    </nav>
+    <main id="main" tabindex="-1">
+      <div id="view">
+        <p class="boot">Loading VidLedger…</p>
+      </div>
+    </main>
+  </div>
+  <nav class="bottomnav" aria-label="Main">
+    <ul id="bottomnav-list"></ul>
+  </nav>
+  <dialog id="dlg"></dialog>
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+  <noscript><p class="boot">VidLedger needs JavaScript turned on.</p></noscript>
+</body>
+</html>

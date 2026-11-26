@@ -1,0 +1,76 @@
+# Process the videos you added on the dashboard: triage, learning packs, review
+# cards and topic study guides. Runs every 6 hours, and whenever the dashboard
+# presses "Process now". Only in the private data repository.
+name: Agent
+run-name: VidLedger agent ${{ inputs.run_id || 'scheduled' }}
+
+on:
+  schedule:
+    - cron: '41 */6 * * *' # minute 41 UTC avoids the busy top of the hour
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Run id from the dashboard (r-YYYYMMDD-HHMMSS-xxxxxx)
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+# One agent at a time. A newer request replaces a pending one; nothing is lost,
+# because every run reads the latest records when it starts.
+concurrency:
+  group: vidledger-agent
+  cancel-in-progress: false
+
+jobs:
+  agent:
+    # Set the repository variable VIDLEDGER_ROLE=data in the private repository only.
+    if: vars.VIDLEDGER_ROLE == 'data'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+      - name: Refuse to run in a public repository
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "$(gh api "repos/${GITHUB_REPOSITORY}" --jq .private)" != "true" ]; then
+            echo "::error::This repository is public. VidLedger stores your library here, so it only runs in a private repository."
+            exit 1
+          fi
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.13'
+      - name: Check out the library and your records
+        run: |
+          python -m agent.publish checkout state
+          python -m agent.publish checkout user
+      - name: Process videos
+        # Inputs reach Python through environment variables, never through the
+        # shell command line, so their text can never run as a command.
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          VIDLEDGER_MODEL: ${{ vars.VIDLEDGER_MODEL }}
+          VIDLEDGER_TRIAGE_MODEL: ${{ vars.VIDLEDGER_TRIAGE_MODEL }}
+          VIDLEDGER_DAILY_VIDEO_HOURS: ${{ vars.VIDLEDGER_DAILY_VIDEO_HOURS }}
+          VIDLEDGER_MAX_JOBS_PER_RUN: ${{ vars.VIDLEDGER_MAX_JOBS_PER_RUN }}
+          VIDLEDGER_RUN_MINUTES: ${{ vars.VIDLEDGER_RUN_MINUTES }}
+          VIDLEDGER_PARALLEL: ${{ vars.VIDLEDGER_PARALLEL }}
+          VIDLEDGER_RUN_ID: ${{ inputs.run_id }}
+          VIDLEDGER_STATE_DIR: state
+          VIDLEDGER_USER_DIR: user
+        run: python -m agent.run
+      - name: Publish the library
+        # Publish even when a job failed, so the dashboard can show what happened.
+        if: ${{ !cancelled() }}
+        env:
+          RUN_ID: ${{ inputs.run_id || github.run_id }}
+        run: python -m agent.publish squash state "agent ${RUN_ID}"
+      - name: Compact the dashboard's save history
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        run: python -m agent.publish compact user
