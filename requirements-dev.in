@@ -1,4 +1,4 @@
 # Test tools only; the agent itself needs nothing beyond the standard library.
 # Compile with:  pip-compile --generate-hashes --strip-extras requirements-dev.in
 pytest==9.2.0
-playwright==1.63.0
+playwright==1.65.2
